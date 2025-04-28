@@ -1,9 +1,34 @@
 from flask import Flask, jsonify
 import psycopg2
+import os
 
 app = Flask(__name__)
 
 pong_count = 0
+
+DB_HOST = os.getenv("DB_HOST", "postgres")
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
+DB_NAME = os.getenv("DB_NAME", "postgres")
+
+def init_app():
+    try:
+        conn = psycopg2.connect(
+            host=DB_HOST,
+            database=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            connect_timeout=3  
+        )
+        print("Database connection successful.")
+
+        conn.close()
+    except psycopg2.OperationalError as e:
+        print(f"Error connecting to the database: {e}")
+    except Exception as e:
+        print(f"Error during initialization: {e}")
+
+init_app()
 
 @app.route('/ping', methods=['GET'])
 def ping():
@@ -19,19 +44,17 @@ def get_pongs():
 def healthz():
     try:
         with psycopg2.connect(
-            host="postgres",  
-            database="postgres",  
-            user="postgres",  
-            password="postgres", 
-            connect_timeout=3 
+            host=DB_HOST,
+            database=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            connect_timeout=3  
         ) as conn:
-            return jsonify({"status": "healthy"}), 200  
+            return jsonify({"status": "healthy"}), 200
     except psycopg2.OperationalError as e:
-       
         print(f"Error connecting to the database: {e}")
         return jsonify({"status": "unhealthy", "error": "Database connection failed", "details": str(e)}), 500
     except Exception as e:
-       
         print(f"Error: {e}")
         return jsonify({"status": "unhealthy", "error": "Unknown error", "details": str(e)}), 500
 
