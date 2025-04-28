@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ping-pong
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ping-pong
+  template:
+    metadata:
+      labels:
+        app: ping-pong
+    spec:
+      containers:
+      - name: ping-pong
+        image: ermalmamaj/ping-pong:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: DB_HOST
+          value: "postgres"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_DB
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ping-pong
+spec:
+  selector:
+    app: ping-pong
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
